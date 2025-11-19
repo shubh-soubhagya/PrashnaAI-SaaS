@@ -1,6 +1,6 @@
 export const PLANS = {
   free: {
-    maxURLsPerDay: 2,
+    maxURLsPerDay: 20,
     maxQueriesPerChat: 10
   },
   pro: {

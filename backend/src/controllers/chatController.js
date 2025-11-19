@@ -54,3 +54,9 @@ export const getChat = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+export const getAllChats = async (req, res) => {
+  const chats = await Chat.find({ userId: req.user.id }).select("websiteUrl");
+  res.json(chats);
+};
+
