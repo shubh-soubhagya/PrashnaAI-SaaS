@@ -3,6 +3,9 @@ import Chat from "../models/Chat.js";
 import axios from "axios";
 import { checkDailyLimits, checkChatQueryLimits } from "../utils/verifyLimits.js";
 
+/* -----------------------------------------------------------
+   CREATE CHAT  → Scrape website ONCE and store scrapedContent
+----------------------------------------------------------- */
 export const createChat = async (req, res) => {
   const { websiteUrl } = req.body;
   const user = await User.findById(req.user.id);
@@ -10,38 +13,101 @@ export const createChat = async (req, res) => {
   if (!checkDailyLimits(user))
     return res.status(403).json({ message: "Daily URL limit reached" });
 
-  const chat = await Chat.create({ userId: user._id, websiteUrl });
+  try {
+    // CALL FASTAPI SCRAPE ENDPOINT
+    const scrapeRes = await axios.post(
+      `${process.env.AI_SERVICE_URL}/scrape`,
+      { websiteUrl }
+    );
 
-  user.dailyURLCount++;
-  await user.save();
+    const scraped = scrapeRes.data.content;
 
-  res.json(chat);
+    const chat = await Chat.create({
+      userId: user._id,
+      websiteUrl,
+      scrapedContent: scraped
+    });
+
+    user.dailyURLCount++;
+    await user.save();
+
+    res.json(chat);
+
+  } catch (err) {
+    console.log("SCRAPE ERROR:", err.response?.data || err.message);
+    return res.status(500).json({ message: "Scraping failed" });
+  }
 };
 
+/* -----------------------------------------------------------
+   SEND MESSAGE → Uses stored scrapedContent → Never scrapes again
+----------------------------------------------------------- */
 export const sendMessage = async (req, res) => {
   const { chatId } = req.params;
   const { message } = req.body;
 
+  console.log("\n===== SEND MESSAGE START =====");
+
   const user = await User.findById(req.user.id);
   const chat = await Chat.findById(chatId);
 
-  if (!checkChatQueryLimits(user, chat))
-    return res.status(403).json({ message: "Chat query limit reached" });
+  if (!chat) {
+    console.log("❌ Chat not found");
+    return res.status(404).json({ message: "Chat not found" });
+  }
 
-  const aiResponse = await axios.post(`${process.env.AI_SERVICE_URL}/ask`, {
-    websiteUrl: chat.websiteUrl,
-    message
-  });
+  console.log("Chat found:", chatId);
+  console.log("Message:", message);
 
-  chat.messages.push({ role: "user", content: message });
-  chat.messages.push({ role: "assistant", content: aiResponse.data.answer });
+  if (!chat.scrapedContent || chat.scrapedContent.trim() === "") {
+    console.log("❌ scrapedContent is EMPTY!");
+    return res.status(500).json({ message: "Scraped content missing" });
+  }
 
-  chat.queryCount++;
-  await chat.save();
+  console.log("scrapedContent length:", chat.scrapedContent.length);
 
-  res.json(chat);
+  try {
+    console.log("🔥 Sending request to FastAPI...");
+
+    const response = await axios.post(
+      `${process.env.AI_SERVICE_URL}/ask`,
+      {
+        websiteContent: chat.scrapedContent,
+        message
+      }
+    );
+
+    console.log("✅ FastAPI Response:", response.data);
+
+    if (!response.data.answer) {
+      console.log("❌ FastAPI answer missing:", response.data);
+      return res.status(500).json({ message: "AI returned invalid response" });
+    }
+
+    chat.messages.push({ role: "user", content: message });
+    chat.messages.push({ role: "assistant", content: response.data.answer });
+
+    chat.queryCount++;
+    await chat.save();
+
+    console.log("===== SEND MESSAGE END SUCCESS =====\n");
+    res.json(chat);
+
+  } catch (err) {
+    console.log("❌ AI SERVICE ERROR:");
+    console.log("Status:", err.response?.status);
+    console.log("Data:", err.response?.data);
+    console.log("Message:", err.message);
+    console.log("===== SEND MESSAGE END WITH ERROR =====\n");
+
+    return res.status(500).json({ message: "AI service crashed" });
+  }
 };
 
+
+/* -----------------------------------------------------------
+   GET ONE CHAT
+----------------------------------------------------------- */
 export const getChat = async (req, res) => {
   try {
     const chatId = req.params.chatId;
@@ -55,8 +121,10 @@ export const getChat = async (req, res) => {
   }
 };
 
+/* -----------------------------------------------------------
+   GET ALL CHATS (history)
+----------------------------------------------------------- */
 export const getAllChats = async (req, res) => {
   const chats = await Chat.find({ userId: req.user.id }).select("websiteUrl");
   res.json(chats);
 };
-
