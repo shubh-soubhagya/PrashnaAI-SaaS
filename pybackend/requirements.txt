@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+groq
+python-dotenv
+newspaper3k
+requests
+beautifulsoup4
+python-multipart
