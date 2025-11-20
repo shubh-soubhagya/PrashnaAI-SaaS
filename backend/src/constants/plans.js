@@ -8,7 +8,7 @@ export const PLANS = {
     maxQueriesPerChat: 20
   },
   expert: {
-    maxURLsPerDay: 9999,
-    maxQueriesPerChat: 9999
+    maxURLsPerDay:100,
+    maxQueriesPerChat: 100
   }
 };

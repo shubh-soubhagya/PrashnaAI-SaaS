@@ -1,73 +1,9 @@
-// import { useEffect, useState } from "react";
-// import { useParams } from "react-router-dom";
-// import api from "../api/axios";
-// import { useAuthStore } from "../store/authStore";
-// import ChatBubble from "../components/ChatBubble";
-
-// export default function ChatPage() {
-//   const { chatId } = useParams();
-//   const { token } = useAuthStore();
-
-//   const [chat, setChat] = useState(null);
-//   const [message, setMessage] = useState("");
-
-//   const sendMessage = async () => {
-//     const res = await api.post(
-//       `/chats/${chatId}/message`,
-//       { message },
-//       { headers: { Authorization: `Bearer ${token}` } }
-//     );
-
-//     setChat(res.data);
-//     setMessage("");
-//   };
-
-//   useEffect(() => {
-//     const fetchChat = async () => {
-//       const res = await api.get(
-//         `/chats/${chatId}`,
-//         { headers: { Authorization: `Bearer ${token}` } }
-//       );
-//       setChat(res.data);
-//     };
-//     fetchChat();
-//   }, []);
-
-//   return (
-//     <div className="p-6 h-screen flex flex-col">
-//       <h1 className="text-xl font-semibold mb-4">{chat?.websiteUrl}</h1>
-
-//       <div className="flex-1 overflow-y-auto bg-white p-4 rounded shadow">
-//         {chat?.messages?.map((m, idx) => (
-//           <ChatBubble key={idx} role={m.role} content={m.content} />
-//         ))}
-//       </div>
-
-//       <div className="mt-4 flex gap-2">
-//         <input
-//           className="flex-1 p-2 border rounded"
-//           value={message}
-//           onChange={(e) => setMessage(e.target.value)}
-//           placeholder="Ask something..."
-//         />
-//         <button
-//           onClick={sendMessage}
-//           className="bg-blue-600 text-white px-6 py-2 rounded"
-//         >
-//           Send
-//         </button>
-//       </div>
-//     </div>
-//   );
-// }
-
-
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import api from "../api/axios";
-import Sidebar from "../components/Sidebar";
 import ChatBubble from "../components/ChatBubble";
 import { useAuthStore } from "../store/authStore";
+import AppLayout from "../layouts/AppLayout";
 
 export default function ChatPage() {
   const { chatId } = useParams();
@@ -75,6 +11,7 @@ export default function ChatPage() {
 
   const [chat, setChat] = useState(null);
   const [message, setMessage] = useState("");
+  const [loadingStep, setLoadingStep] = useState("");
 
   const fetchChat = async () => {
     try {
@@ -102,30 +39,38 @@ export default function ChatPage() {
   };
 
   useEffect(() => {
-    fetchChat();
+    setLoadingStep("Loading chat...");
+    fetchChat().then(() => {
+      setLoadingStep("");
+    });
   }, [chatId]);
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <AppLayout>
+      <div className="flex flex-col h-full">
 
-      {/* Sidebar */}
-      <Sidebar />
-
-      {/* Chat Area */}
-      <div className="flex-1 flex flex-col">
-        {/* Chat Header */}
+        {/* Header */}
         <div className="p-4 bg-white shadow flex items-center justify-between">
           <h1 className="text-xl font-semibold">{chat?.websiteUrl}</h1>
         </div>
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-3">
-          {chat?.messages?.map((m, index) => (
-            <ChatBubble key={index} role={m.role} content={m.content} />
-          ))}
-        </div>
+        {/* Loading State */}
+        {loadingStep && (
+          <div className="p-4 text-gray-600">
+            {loadingStep}
+          </div>
+        )}
 
-        {/* Message Input */}
+        {/* Messages */}
+        {!loadingStep && (
+          <div className="flex-1 overflow-y-auto p-6 space-y-3 bg-gray-100">
+            {chat?.messages?.map((m, index) => (
+              <ChatBubble key={index} role={m.role} content={m.content} />
+            ))}
+          </div>
+        )}
+
+        {/* Input */}
         <div className="p-4 bg-white flex gap-3 shadow">
           <input
             value={message}
@@ -141,7 +86,6 @@ export default function ChatPage() {
           </button>
         </div>
       </div>
-
-    </div>
+    </AppLayout>
   );
 }
