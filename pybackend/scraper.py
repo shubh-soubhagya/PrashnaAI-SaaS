@@ -1,3 +1,6 @@
+
+
+
 from newspaper import Article
 import requests
 import random
@@ -7,22 +10,44 @@ USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:119.0) Gecko/20100101 Firefox/119.0",
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+    "Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0 Mobile Safari/537.36",
 ]
+
+def build_headers():
+    return {
+        "User-Agent": random.choice(USER_AGENTS),
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Connection": "keep-alive",
+        "Upgrade-Insecure-Requests": "1",
+        "Referer": "https://www.google.com/",
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "cross-site",
+        "Sec-Fetch-User": "?1",
+    }
 
 def scrape_website(url: str) -> str:
     """Scrapes readable text content from a website using a robust method."""
 
-    headers = {"User-Agent": random.choice(USER_AGENTS)}
-
     try:
         print(f"SCRAPER: Fetching HTML for {url}")
 
-        # 1️⃣ Download raw HTML manually for reliability
-        response = requests.get(url, headers=headers, timeout=10)
+        session = requests.Session()
+        session.headers.update(build_headers())
+
+        response = session.get(url, timeout=10)
+
+        if response.status_code in [403, 429]:
+            print(f"SCRAPER BLOCKED: {response.status_code}")
+            return "This website restricts automated access."
+
         response.raise_for_status()
         html = response.text
 
-        # 2️⃣ Try Newspaper3k with manually-set HTML
+        # --- Newspaper3k parsing ---
         article = Article(url)
         article.set_html(html)
 
@@ -33,23 +58,25 @@ def scrape_website(url: str) -> str:
             print("SCRAPER: Newspaper parse error →", e)
             text = ""
 
-        # 3️⃣ If Newspaper content too small, fallback to BeautifulSoup
+        # --- BeautifulSoup fallback ---
         if not text or len(text) < 200:
             print("SCRAPER: Using BeautifulSoup fallback")
             soup = BeautifulSoup(html, "html.parser")
             paragraphs = soup.find_all("p")
 
             text = "\n".join(
-                p.get_text().strip() for p in paragraphs if p.get_text().strip()
+                p.get_text().strip()
+                for p in paragraphs
+                if p.get_text() and p.get_text().strip()
             )
 
-        # 4️⃣ If still empty → return safe fallback
+        # --- Final validation ---
         if not text or not text.strip():
             print("SCRAPER: FINAL FAIL → No readable content")
             return "No readable content found on this website."
 
         print(f"SCRAPER: Extracted {len(text)} characters")
-        return text[:15000]  # limit to avoid overloading LLM
+        return text[:15000]
 
     except Exception as e:
         print("SCRAPER ERROR:", e)
