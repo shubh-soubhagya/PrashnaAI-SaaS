@@ -113,9 +113,14 @@ def ask(req: AskRequest):
 # -----------------------------
 @app.post("/scrape")
 def scrape(req: ScrapeRequest):
-    content = scrape_website(req.websiteUrl)
+    result = scrape_website(req.websiteUrl)
 
-    if not content or not content.strip():
-        return {"content": ""}
+    if isinstance(result, dict):
+        content = result.get("content", "")
+        if not content or not content.strip() or "No readable content" in content:
+            return {"content": "", "title": ""}
+        return result
+    
+    # Fallback if scraper returns string (legacy)
+    return {"content": result, "title": "Untitled"}
 
-    return {"content": content}

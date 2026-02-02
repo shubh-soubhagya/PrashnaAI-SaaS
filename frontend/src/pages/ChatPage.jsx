@@ -122,7 +122,7 @@ export default function ChatPage() {
 
         {/* Messages Container */}
         {!loadingStep && (
-          <div 
+          <div
             id="messages-container"
             className="flex-1 overflow-y-auto p-6 space-y-6 bg-transparent custom-scrollbar"
           >
@@ -152,28 +152,27 @@ export default function ChatPage() {
                 {chat?.messages?.map((m, index) => (
                   <div key={index} className="flex gap-4">
                     {/* Avatar */}
-                    <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${
-                      m.role === 'user' 
-                        ? 'bg-blue-500/20 border border-blue-500/30' 
+                    <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${m.role === 'user'
+                        ? 'bg-blue-500/20 border border-blue-500/30'
                         : 'bg-purple-500/20 border border-purple-500/30'
-                    }`}>
+                      }`}>
                       {m.role === 'user' ? (
                         <User size={16} className="text-blue-400" />
                       ) : (
                         <Bot size={16} className="text-purple-400" />
                       )}
                     </div>
-                    
+
                     {/* Message Bubble */}
                     <div className="flex-1 min-w-0">
-                      <ChatBubble 
-                        role={m.role} 
-                        content={m.content} 
+                      <ChatBubble
+                        role={m.role}
+                        content={m.content}
                       />
                     </div>
                   </div>
                 ))}
-                
+
                 {/* Typing Indicator */}
                 {isSending && (
                   <div className="flex gap-4">
@@ -199,56 +198,52 @@ export default function ChatPage() {
         {/* Enhanced Input Area */}
         <div className="bg-gray-900/80 backdrop-blur-2xl border-t border-gray-700/50 p-6">
           <div className="max-w-4xl mx-auto">
-            <div className="flex gap-4 items-end">
-              <div className="flex-1 relative">
-                <textarea  
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  className="w-full bg-gray-800/70 backdrop-blur-sm border border-gray-600/50 
-                    rounded-2xl px-5 py-4 text-gray-200 placeholder-gray-400
-                    focus:outline-none focus:border-blue-500/70 focus:bg-gray-800/90
-                    transition-all duration-300 resize-none min-h-[60px] max-h-32
-                    focus:ring-2 focus:ring-blue-500/20 custom-scrollbar"
-                  placeholder="Ask a question about the website content..."
-                  rows={1}
-                  disabled={isSending}
-                  style={{
-                    height: 'auto',
-                    minHeight: '60px'
-                  }}
-                  onInput={(e) => {
-                    e.target.style.height = 'auto';
-                    e.target.style.height = e.target.scrollHeight + 'px';
-                  }}
-                />
-                <div className="absolute right-3 bottom-3 text-xs text-gray-500">
-                  ⏎ Enter to send
-                </div>
+            <div className="w-full relative">
+              <textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+                className="w-full bg-gray-800/70 backdrop-blur-sm border border-gray-600/50 
+                  rounded-2xl pl-5 pr-32 py-4 text-gray-200 placeholder-gray-400
+                  focus:outline-none focus:border-blue-500/70 focus:bg-gray-800/90
+                  transition-all duration-300 resize-none min-h-[60px] max-h-32
+                  focus:ring-2 focus:ring-blue-500/20 custom-scrollbar"
+                placeholder="Ask a question about the website content..."
+                rows={1}
+                disabled={isSending}
+                style={{
+                  height: 'auto',
+                  minHeight: '60px'
+                }}
+                onInput={(e) => {
+                  e.target.style.height = 'auto';
+                  e.target.style.height = e.target.scrollHeight + 'px';
+                }}
+              />
+
+              <div className="absolute right-2 bottom-2 flex items-center gap-2">
+                <button
+                  onClick={sendMessage}
+                  disabled={!message.trim() || isSending}
+                  className="h-10 px-4 bg-gradient-to-r from-blue-600 to-purple-600 
+                    hover:from-blue-500 hover:to-purple-500 disabled:from-gray-700 disabled:to-gray-800
+                    text-white rounded-xl font-semibold transition-all duration-300
+                    flex items-center gap-2 shadow-lg hover:shadow-xl hover:scale-105
+                    disabled:cursor-not-allowed disabled:hover:scale-100
+                    border border-blue-500/30 hover:border-blue-400/50"
+                >
+                  {isSending ? (
+                    <Loader2 size={16} className="text-white animate-spin" />
+                  ) : (
+                    <Send size={16} className="text-white" />
+                  )}
+                  <span className="text-sm hidden sm:inline">
+                    {isSending ? 'Sending...' : 'Send'}
+                  </span>
+                </button>
               </div>
-              
-              <button
-                onClick={sendMessage}
-                disabled={!message.trim() || isSending}
-                className="h-12 px-6 bg-gradient-to-r from-blue-600 to-purple-600 
-                  hover:from-blue-500 hover:to-purple-500 disabled:from-gray-700 disabled:to-gray-800
-                  text-white rounded-2xl font-semibold transition-all duration-300
-                  flex items-center gap-2 shadow-lg hover:shadow-xl hover:scale-105
-                  disabled:cursor-not-allowed disabled:hover:scale-100 min-w-[100px] justify-center
-                  border border-blue-500/30 hover:border-blue-400/50 group relative overflow-hidden"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
-                {isSending ? (
-                  <Loader2 size={18} className="text-white animate-spin relative z-10" />
-                ) : (
-                  <Send size={18} className="text-white relative z-10" />
-                )}
-                <span className="relative z-10 hidden sm:inline">
-                  {isSending ? 'Sending...' : 'Send'}
-                </span>
-              </button>
             </div>
-            
+
             {/* Quick Suggestions */}
             {chat?.messages?.length === 0 && !message && (
               <div className="flex flex-wrap gap-2 mt-4">

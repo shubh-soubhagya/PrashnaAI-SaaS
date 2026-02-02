@@ -20,12 +20,17 @@ export const createChat = async (req, res) => {
       { websiteUrl }
     );
 
-    const scraped = scrapeRes.data.content;
+    const { content, title } = scrapeRes.data;
+
+    if (!content || content.trim() === "" || content.includes("No readable content")) {
+      return res.status(400).json({ message: "Unable to read website content. Please try a different URL." });
+    }
 
     const chat = await Chat.create({
       userId: user._id,
       websiteUrl,
-      scrapedContent: scraped
+      title: title || websiteUrl,
+      scrapedContent: content
     });
 
     user.dailyURLCount++;
@@ -125,6 +130,6 @@ export const getChat = async (req, res) => {
    GET ALL CHATS (history)
 ----------------------------------------------------------- */
 export const getAllChats = async (req, res) => {
-  const chats = await Chat.find({ userId: req.user.id }).select("websiteUrl");
+  const chats = await Chat.find({ userId: req.user.id }).select("websiteUrl title createdAt");
   res.json(chats);
 };

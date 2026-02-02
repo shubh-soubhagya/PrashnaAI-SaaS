@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-dotenv.config(); 
+dotenv.config();
 
 import express from "express";
 import cors from "cors";
@@ -10,6 +10,7 @@ import morgan from "morgan";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/auth.js";
 import chatRoutes from "./routes/chat.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
 
 
 console.log("Auth routes loaded:", authRoutes);
@@ -23,6 +24,7 @@ app.use(morgan("dev"));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/chats", chatRoutes);
+app.use("/api/payment", paymentRoutes);
 
 connectDB();
 

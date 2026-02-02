@@ -75,13 +75,15 @@ export default function Sidebar() {
     fetchChats(token);
   }, []);
 
-  const filteredChats = chats.filter(chat =>
-    chat.websiteUrl?.toLowerCase().includes(searchTerm.toLowerCase())
+  // Sort chats: Newest first
+  const sortedChats = [...chats].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  const filteredChats = sortedChats.filter(chat =>
+    (chat.title || chat.websiteUrl || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
     <>
-      {/* Floating Background Blobs */}
       <div className="fixed inset-0 -z-10 overflow-hidden">
         <div className="absolute -top-40 -left-40 w-80 h-80 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-full blur-3xl animate-float-slow"></div>
         <div className="absolute -bottom-40 -right-40 w-80 h-80 bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 rounded-full blur-3xl animate-float-medium"></div>
@@ -211,20 +213,18 @@ export default function Sidebar() {
                   className={`
                     group flex items-center gap-3 px-3 py-3 text-sm rounded-xl
                     transition-all duration-300 cursor-pointer border
-                    ${
-                      isActive
-                        ? "bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-white border-white/20 shadow-lg"
-                        : "bg-gray-900/30 hover:bg-gray-800/50 border-white/5 hover:border-white/10"
+                    ${isActive
+                      ? "bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-white border-white/20 shadow-lg"
+                      : "bg-gray-900/30 hover:bg-gray-800/50 border-white/5 hover:border-white/10"
                     }
                     ${collapsed ? "justify-center" : ""}
                     hover:shadow-md hover:scale-[1.02]
                   `}
                 >
-                  <div className={`p-1.5 rounded-lg transition-colors ${
-                    isActive 
-                      ? "bg-blue-500/20" 
-                      : "bg-gray-800/50 group-hover:bg-gray-700/50"
-                  }`}>
+                  <div className={`p-1.5 rounded-lg transition-colors ${isActive
+                    ? "bg-blue-500/20"
+                    : "bg-gray-800/50 group-hover:bg-gray-700/50"
+                    }`}>
                     <MessageSquare
                       size={16}
                       className={
@@ -238,7 +238,7 @@ export default function Sidebar() {
                   {!collapsed && (
                     <div className="flex-1 min-w-0">
                       <p className="truncate font-medium text-gray-200 group-hover:text-white">
-                        {chat.websiteUrl || "Untitled Session"}
+                        {chat.title || chat.websiteUrl || "Untitled Session"}
                       </p>
                       <p className="text-xs text-gray-500 mt-0.5">
                         {new Date(chat.createdAt).toLocaleDateString()}
@@ -253,16 +253,34 @@ export default function Sidebar() {
 
         {/* Footer */}
         <div
-          className={`px-4 py-5 border-t border-white/10 bg-gray-900/30 
-            backdrop-blur-xl ${collapsed ? "flex justify-center" : ""}`}
+          className={`px-4 py-3 border-t border-white/10 bg-gray-900/30 
+            backdrop-blur-xl space-y-2 ${collapsed ? "flex flex-col items-center px-0" : ""}`}
         >
+          {/* Settings */}
+          <button
+            onClick={() => navigate("/settings")}
+            className={`flex items-center gap-3 w-full px-4 py-2 text-sm rounded-xl 
+            bg-transparent hover:bg-white/5 border border-transparent
+            hover:border-white/5 text-gray-400 hover:text-white
+            transition-all duration-300 group
+            ${collapsed ? "w-10 justify-center px-0" : ""}`}
+          >
+            <div className="p-1.5 rounded-lg group-hover:bg-white/10 transition-colors">
+              <Search size={16} className="hidden" /> {/* Hack to align if needed, but better use cog icon */}
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-settings"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg>
+            </div>
+            {!collapsed && (
+              <span className="font-medium">Settings</span>
+            )}
+          </button>
+
           <button
             onClick={logout}
-            className={`flex items-center gap-3 w-full px-4 py-3 text-sm rounded-xl 
+            className={`flex items-center gap-3 w-full px-4 py-2 text-sm rounded-xl 
             bg-gray-800/30 hover:bg-red-500/20 border border-white/5 
             hover:border-red-500/30 text-gray-400 hover:text-red-300
             transition-all duration-300 hover:shadow-lg group
-            ${collapsed ? "w-12 justify-center px-0" : ""}`}
+            ${collapsed ? "w-10 justify-center px-0" : ""}`}
           >
             <div className="p-1.5 bg-white/5 rounded-lg group-hover:bg-red-500/20 transition-colors">
               <LogOut size={16} />

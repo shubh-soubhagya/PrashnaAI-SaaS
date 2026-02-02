@@ -19,6 +19,7 @@ def ask_groq(website_content: str, user_message: str) -> str:
         "If the answer is not found, say: "
         "'I couldn't find this information on the website.' "
         "Always respond in clean Markdown format."
+        "DONT respond in Tables."
     )
 
     user_prompt = f"""
@@ -38,7 +39,7 @@ User Question:
             {"role": "user", "content": user_prompt}
         ],
         temperature=0.2,
-        max_tokens=900   # ⬅ enough for structured answers
+        max_tokens=2000   # ⬅ enough for structured answers
     )
 
     return response.choices[0].message.content.strip()

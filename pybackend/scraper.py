@@ -70,14 +70,16 @@ def scrape_website(url: str) -> str:
                 if p.get_text() and p.get_text().strip()
             )
 
-        # --- Final validation ---
-        if not text or not text.strip():
-            print("SCRAPER: FINAL FAIL → No readable content")
-            return "No readable content found on this website."
-
-        print(f"SCRAPER: Extracted {len(text)} characters")
-        return text[:15000]
 
     except Exception as e:
         print("SCRAPER ERROR:", e)
-        return "No readable content found due to scraping error."
+        return {"content": "No readable content found due to scraping error.", "title": "Error"}
+
+    # --- Final validation ---
+    if not text or not text.strip():
+        print("SCRAPER: FINAL FAIL → No readable content")
+        return {"content": "No readable content found on this website.", "title": "No Content"}
+
+    print(f"SCRAPER: Extracted {len(text)} characters")
+    return {"content": text[:15000], "title": article.title or "Untitled Article"}
+
